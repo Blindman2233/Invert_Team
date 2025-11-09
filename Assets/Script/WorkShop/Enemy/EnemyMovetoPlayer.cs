@@ -1,8 +1,14 @@
-using Unity.VisualScripting;
+﻿using Unity.VisualScripting;
 using UnityEngine;
 
 public class EnemyMovetoPlayer : Enemy
 {
+    [Header("Detection Settings")]
+    [SerializeField] private float normalDetectionRange = 10f;
+    [SerializeField] private float crouchDetectionRange = 5f; 
+    [SerializeField] private float attackRange = 1.5f;
+
+    private Player playerScript; 
 
     private void Update()
     {
@@ -11,18 +17,45 @@ public class EnemyMovetoPlayer : Enemy
             animator.SetBool("Attack", false);
             return;
         }
-        Turn(player.transform.position - transform.position);
-        timer -= Time.deltaTime;
 
-        if (GetDistanPlayer() < 1.5)
+       
+        if (playerScript == null)
         {
-            Attack(player);
+            playerScript = player.GetComponent<Player>();
+            if (playerScript == null)
+            {
+                
+                Debug.LogError("Enemy cannot find the 'Player' script on the player object!");
+                return;
+            }
+        }
+        
+        float currentDetectionRange = normalDetectionRange;
+        if (playerScript.IsCrouching) 
+        {
+            currentDetectionRange = crouchDetectionRange;
+        }
+        float distanceToPlayer = GetDistanPlayer(); 
+        if (distanceToPlayer <= currentDetectionRange)
+        {  
+            Turn(player.transform.position - transform.position);
+            timer -= Time.deltaTime;
+
+            if (distanceToPlayer < attackRange) 
+            {
+                Attack(player);
+            }
+            else
+            {
+                animator.SetBool("Attack", false);
+                Vector3 direction = (player.transform.position - transform.position).normalized;
+                Move(direction);
+            }
         }
         else
         {
             animator.SetBool("Attack", false);
-            Vector3 direction = (player.transform.position - transform.position).normalized;
-            Move(direction);
+            Move(Vector3.zero); 
         }
     }
-}
+} 
